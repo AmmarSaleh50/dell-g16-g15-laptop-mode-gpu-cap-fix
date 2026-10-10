@@ -5,8 +5,9 @@ On the Dell G15 5530 and G16 7630, the RTX 4070/4060 Laptop GPU suddenly clamps 
 and nothing in the BIOS, Windows or the NVIDIA panel brings it back.
 
 This repo has two things: a small tool that turns the cap back off in about two seconds, and a full
-explanation of what the cap actually is and why every other fix for it fails. The tool uses NVIDIA's
-own driver library. It installs no driver, patches nothing, injects nothing, and needs no admin.
+explanation of what the cap actually is and why every other fix for it fails. It works through
+NVIDIA's own driver library, as an ordinary user-mode program; the "Is it safe?" section below
+spells out exactly what it touches.
 
 ## Quick fix
 
@@ -37,8 +38,8 @@ switches on, supposedly when it senses the machine being tilted, shaken or moved
 to a fraction of its power budget and latches there, often until a reboot, sometimes not even then.
 
 It is not a thermal event. It fires with the GPU cold and the fans already at full. And there is no
-setting anywhere in Windows, the BIOS or the NVIDIA panel to turn it off, which is what makes it so
-maddening. This tool turns it off.
+switch for it anywhere you would think to look, which is what makes it so maddening. This tool turns
+it off.
 
 ## The usual fix (disabling the Intel sensor) does not work
 
@@ -53,19 +54,22 @@ D-notifier (`0xD1` to `0xD5`) on the GPU, and the NVIDIA driver turns that into 
 change described below. That logic lives in firmware, below Windows, so disabling the Intel sensor
 device leaves the EC's own trigger path completely untouched and nothing changes.
 
-This is also why there is no Windows, BIOS or driver setting that turns it off, and why the only
-thing that reliably brings the GPU back is sending it to its full power state directly, which is what
-this tool does.
+This is also why poking at Windows, BIOS or driver settings never helps: the trigger sits below all
+of them. The only thing that reliably brings the GPU back is sending it to its full power state
+directly, which is what this tool does.
 
 ## Is it safe?
 
-- **No driver is loaded.** Nothing is installed, nothing signed or unsigned enters the kernel.
-- **No signature check is bypassed.** Secure Boot and driver signing are untouched.
-- **Nothing is patched.** No firmware, no BIOS, no driver binary is modified. The DLLs were only
-  ever read, never changed.
-- **No admin rights.** It runs as a normal user.
-- **Nothing else is touched.** It talks only to the display driver, through NVIDIA's own signed
-  library. No injection into any other process, no network traffic, no files changed.
+Everything the tool does runs through `nvapi64.dll`, NVIDIA's own signed library (the same one the
+control panel uses), as a normal user. It asks the driver for a single power-state change, and that
+is the whole operation. In more detail:
+
+- It loads **no kernel driver**, so Secure Boot and driver signing stay exactly as they were.
+- It **reads** the driver-store DLLs to find the right call but modifies none of them, and leaves
+  the BIOS and firmware alone.
+- It talks only to the display driver, stays out of every other process, and opens no network
+  connection.
+- The one thing that changes on your machine is the GPU's power state.
 
 ---
 
@@ -260,9 +264,9 @@ has no branch that writes `0`, meaning it has no "restore full power" path of it
 out-of-range index, however, falls through writing nothing at all, which leaves `powerState = 0 =
 P0 = full power`.
 
-`gpu-uncap` passes index **99**. Nothing is corrupted, no memory is overwritten, no privilege is
-gained. It is NVIDIA's own routine, called through its own public entry point, with an input its
-authors simply did not add a branch for.
+`gpu-uncap` passes index **99**. That is NVIDIA's own routine, reached through its own public entry
+point and handed an input its authors never wrote a branch for, so the zeroed buffer survives intact
+and the GPU goes to full power. The call is well-defined and runs at ordinary user privilege.
 
 ### Proof
 
