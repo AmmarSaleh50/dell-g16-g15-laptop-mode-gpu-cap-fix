@@ -27,8 +27,31 @@ spells out exactly what it touches.
    gpu-uncap.exe -w
    ```
 
-That's the whole fix. `watch.ps1` starts the watcher hidden if you'd rather it run quietly, and you
-can put a shortcut to it in `shell:startup` to launch it at login. Everything below is the why.
+That's the whole fix. Everything below the next section is the why.
+
+### Run it in the background (no terminal window)
+
+You don't have to keep a terminal open. `watch.ps1` starts `gpu-uncap.exe -w` hidden, and a shortcut
+in your Startup folder launches it every time you log in:
+
+1. Press `Win + R`, type `shell:startup` and press Enter.
+2. Right-click inside the folder, choose **New > Shortcut**, and enter this as the location (change
+   the path to wherever you put the folder):
+   ```
+   powershell -WindowStyle Hidden -ExecutionPolicy Bypass -File "C:\path\to\gpu-uncap\watch.ps1"
+   ```
+3. Name it something like `GPU Uncap` and click Finish.
+
+Double-click the shortcut once to start the watcher now; from then on it starts by itself at every
+login. It checks the limit twice a second, which costs microseconds of CPU, and only one watcher
+ever runs at a time. Its log is at `%APPDATA%\gpu-uncap\gpu-uncap.log`.
+
+Not sure you need the watcher? Run plain `gpu-uncap.exe` instead. Dell applies the clamp when its
+controller changes its mind, not continuously, so a single restore usually holds for the rest of
+the session. If the GPU drops back to 25 W / 30 W, just run it again.
+
+To stop the watcher, delete the shortcut from `shell:startup` and end `gpu-uncap.exe` in Task Manager
+(or restart).
 
 ## What is "Laptop Mode"?
 
