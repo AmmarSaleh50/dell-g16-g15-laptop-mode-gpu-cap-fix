@@ -27,7 +27,7 @@ spells out exactly what it touches.
    gpu-uncap.exe -w
    ```
 
-That's the whole fix. Everything below the next section is the why.
+That's the whole fix.
 
 ### Run it in the background (no terminal window)
 
@@ -52,6 +52,8 @@ the session. If the GPU drops back to 25 W / 30 W, just run it again.
 
 To stop the watcher, delete the shortcut from `shell:startup` and end `gpu-uncap.exe` in Task Manager
 (or restart).
+
+Everything below is the why.
 
 ## What is "Laptop Mode"?
 
